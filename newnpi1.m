@@ -9,14 +9,25 @@
 %(the index of column is fe, the index of row is fN, t is the same as us),
 %t is the cpu time 
 %% function
-
+clc;
+clear;
+syms s w epsilo real;
+%first-order used funciton
+%p{k}(-s)=-conj(p{k}(s))
+p{1}=symfun(exp(-1i*s/epsilo^2)*s,[w,epsilo]);
+p{2}=symfun(exp(-1i*s/epsilo^2)*int(exp(2*1i*w/epsilo^2),w,0,s),[w,epsilo]);
+p{3}=symfun(exp(-1i*s/epsilo^2)*int(exp(-2*1i*w/epsilo^2),w,0,s),[w,epsilo]);
+p{4}=symfun(exp(-1i*s/epsilo^2)*int(exp(4*1i*w/epsilo^2),w,0,s),[w,epsilo]);
+for k=1:4
+    p{k}=subs(p{k},s,w);
+end
 %function [us,t]=newnpi1(T)
 tic
 %load('symp.mat');
 T=1;                                                                    %the T_max
 a=-128;b=128;                                                          %the domain
 lada=1;                                                               %the coefficient of nonlinear term
-ht=waitbar(0,'Please wait...');                              %the progress bar
+%ht=waitbar(0,'Please wait...');                              %the progress bar
 %% preparation
 for fe=1:2:5                                                           %control the value of epsilon
     epsilon=1/2^(2*(fe-1));
@@ -68,16 +79,17 @@ for fe=1:2:5                                                           %control 
             F_2m=A.*fft((2*abs(ups).^2+abs(ums).^2).*ums);
             
             delta_n1p=ps(1)*F_2p + ps(2)*F_2m+ ps(3)*F_1p + ps(4)*F_1m;
-            delta_n1m=-conj(ps(1))*F_2m + -conj(ps(2))*F_2p+ -conj(ps(3))*F_1m + -conj(ps(4))*F_1p;
+            %delta_n1m=-conj(ps(1))*F_2m + -conj(ps(2))*F_2p+ -conj(ps(3))*F_1m + -conj(ps(4))*F_1p;
 
             ups=exp(-1i*tau*betal).*up+ delta_n1p;
-            ums=exp(1i*tau*betal).*um+ delta_n1m;
+            %ums=exp(1i*tau*betal).*um+ delta_n1m;
             up=ups;
-            um=ums;
+            um=fft(conj(ifft(up)));%ums;
         end
+        delta_n1m=fft(conj(ifft(delta_n1p)));
          nonerr1(fN,fe)=norm(delta_n1p+delta_n1m,2)/tau;
         nonerr2(fN,fe)=norm(delta_n1p+delta_n1m,'inf')/tau;
-        waitbar(fN*fe/21,ht);                                       %show the progress bar
+        %waitbar(fN*fe/21,ht);                                       %show the progress bar
         us{fN,fe}=ifft(up+um);                                              %save the numerical solution
         if fN>1
             err(fN-1,fe)=sqrt(h)*norm(us{fN,fe}-us{fN-1,fe},'fro');
@@ -87,7 +99,7 @@ for fe=1:2:5                                                           %control 
     %us(:,fe)=up;
       t(fN,fe)=toc;                                                         %save the cpu time
 end%fe
-close(ht);                                                      %close the progress bar
+%close(ht);                                                      %close the progress bar
 % plot(log2(ts),log2(err(:,fe)),'r',log2(ts),1*log2(ts))
 % x=linspace(-pi,pi-2*pi/M,M);
 % plot(x,up)
